@@ -28,3 +28,17 @@ define offsetof
     print &((struct $arg0 *)0) -> $arg1
   end
 end
+
+# usage: list-threads-of-process process
+# this does not work yet
+define list-threads-of-process
+  set $m = (struct _EPROCESS*)$arg0->ThreadListHead.Flink
+  while &((struct _ETHREAD*)$m)->ThreadListEntry != &$arg0->ThreadListHead
+    p "hallo"
+#    set $n = ((char*)$m)-offsetof _ETHREAD ThreadListEntry
+    set $n = ((char*)$m)-0x224
+    p $m
+    p $n
+    set $m = ((struct _ETHREAD*)$n)->ThreadListEntry.Flink
+  end
+end
