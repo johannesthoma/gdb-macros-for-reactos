@@ -18,6 +18,15 @@ define load-ntoskrnl
   add-symbol-file ../../output-gdb-old/symbols/ntoskrnl.exe 0x80401000 -s .bss 0x8061c000 -s .data 0x805b8000 -s .edata 80645000
 end
 
+# attach to target, load kernel symbols and break on BSOD
+# also specific to my setup
+
+define init-reactos
+  target remote localhost:2001
+  load-ntoskrnl
+  break RtlpBreakWithStatusInstruction@0
+end
+
 # example:
 # offsetof _EPROCESS ThreadListHead
 # $1 = (LIST_ENTRY *) 0x180
