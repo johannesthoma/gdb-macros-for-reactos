@@ -41,17 +41,15 @@ define offsetof
 end
 
 # usage: list-threads-of-process process
+# example: list-threads-of-process PsInitialSystemProcess
 
 define list-threads-of-process
   set $entry = $arg0->ThreadListHead.Flink
-  p $entry
-  p $arg0->ThreadListHead
-  p &$arg0->ThreadListHead
   while $entry != &$arg0->ThreadListHead
-    print "hallo"
     set $thread = (struct _ETHREAD *)(((char*)$entry) - (char*)(&((struct _ETHREAD *)0)->ThreadListEntry))
-    p $entry
     p $thread
+    p $thread->StartAddress
+    p (enum _KTHREAD_STATE) $thread->Tcb->State
     set $entry = $entry->Flink
   end
 end
