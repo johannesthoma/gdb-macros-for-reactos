@@ -64,3 +64,29 @@ define list-threads-of-process
     set $entry = $entry->Flink
   end
 end
+
+# usage: eip-of-thread <thread-pointer> <out-eip-value>
+define eip-of-thread
+  set $arg1 = ((ULONG_PTR*)(((struct _ETHREAD *) $arg0)->Tcb.KernelStack))[2]
+end
+
+define ebp-of-thread
+  set $arg1 = ((ULONG_PTR*)(((struct _ETHREAD *) $arg0)->Tcb.KernelStack))[3]
+end
+
+define esp-of-thread
+  set $arg1 = ((struct _ETHREAD *) $arg0)->Tcb.KernelStack
+end
+
+# This switches gdb's context to thread ETHREAD $arg0
+# it ONLY sets eip, esp and ebp so backtrace should work
+# but running in the new thread probably gives wrong results.
+define switch-context
+  set $old_eip = $eip
+  set $old_esp = $esp
+  set $old_ebp = $ebp
+
+  eip-of-thread $arg0 $eip
+  esp-of-thread $arg0 $esp
+  ebp-of-thread $arg0 $ebp
+end
