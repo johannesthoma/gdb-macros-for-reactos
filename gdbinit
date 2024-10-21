@@ -61,6 +61,12 @@ define list-threads-of-process
     p $thread
     p $thread->StartAddress
     p (enum _KTHREAD_STATE) $thread->Tcb->State
+    set $w = __find_thread($thread)
+    if $w != 0
+        print $w.comm
+    else
+        print "not a WinDRBD thread"
+    end
     set $entry = $entry->Flink
   end
 end
@@ -74,19 +80,51 @@ define ebp-of-thread
   set $arg1 = ((ULONG_PTR*)(((struct _ETHREAD *) $arg0)->Tcb.KernelStack))[3]
 end
 
+define edi-of-thread
+  set $arg1 = ((ULONG_PTR*)(((struct _ETHREAD *) $arg0)->Tcb.KernelStack))[4]
+end
+
+define esi-of-thread
+  set $arg1 = ((ULONG_PTR*)(((struct _ETHREAD *) $arg0)->Tcb.KernelStack))[5]
+end
+
+define ebx-of-thread
+  set $arg1 = ((ULONG_PTR*)(((struct _ETHREAD *) $arg0)->Tcb.KernelStack))[6]
+end
+
 define esp-of-thread
   set $arg1 = ((struct _ETHREAD *) $arg0)->Tcb.KernelStack
+end
+
+define save-context
+  set $old_eip = $eip
+  set $old_esp = $esp
+  set $old_ebp = $ebp
+  set $old_edi = $edi
+  set $old_esi = $esi
+  set $old_ebx = $ebx
+end
+
+define restore-context
+  set $eip = $old_eip
+  set $esp = $old_esp
+  set $ebp = $old_ebp
+  set $edi = $old_edi
+  set $esi = $old_esi
+  set $ebx = $old_ebx
 end
 
 # This switches gdb's context to thread ETHREAD $arg0
 # it ONLY sets eip, esp and ebp so backtrace should work
 # but running in the new thread probably gives wrong results.
 define switch-context
-  set $old_eip = $eip
-  set $old_esp = $esp
-  set $old_ebp = $ebp
-
+	# this will modify $eip, ...
   eip-of-thread $arg0 $eip
   esp-of-thread $arg0 $esp
   ebp-of-thread $arg0 $ebp
+  edi-of-thread $arg0 $edi
+  esi-of-thread $arg0 $esi
+  ebx-of-thread $arg0 $ebx
 end
+
+
