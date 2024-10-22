@@ -127,4 +127,23 @@ define switch-context
   ebx-of-thread $arg0 $ebx
 end
 
+# usage: list-threads-of-process process
+# example: list-threads-of-process PsInitialSystemProcess
+
+define backtrace-windrbd-threads
+  set $process = PsInitialSystemProcess
+  set $entry = $process->ThreadListHead.Flink
+  while $entry != &$process->ThreadListHead
+    set $thread = (struct _ETHREAD *)(((char*)$entry) - (char*)(&((struct _ETHREAD *)0)->ThreadListEntry))
+    set $w = __find_thread($thread)
+    if $w != 0
+        printf "%p %p %d %s\n", $thread, $thread->StartAddress, (enum _KTHREAD_STATE) $thread->Tcb->State, $w.comm
+        save-context
+        switch-context $thread
+        bt
+        restore-context
+    end
+    set $entry = $entry->Flink
+  end
+end
 
