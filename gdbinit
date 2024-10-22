@@ -73,7 +73,8 @@ end
 
 # usage: eip-of-thread <thread-pointer> <out-eip-value>
 define eip-of-thread
-  set $arg1 = ((ULONG_PTR*)(((struct _ETHREAD *) $arg0)->Tcb.KernelStack))[2]
+#  set $arg1 = ((ULONG_PTR*)(((struct _ETHREAD *) $arg0)->Tcb.KernelStack))[2]
+  set $arg1 = ((ULONG_PTR*)(((struct _ETHREAD *) $arg0)->Tcb.KernelStack))[7]
 end
 
 define ebp-of-thread
@@ -127,10 +128,11 @@ define switch-context
   ebx-of-thread $arg0 $ebx
 end
 
-# usage: list-threads-of-process process
-# example: list-threads-of-process PsInitialSystemProcess
+# usage: backtrace-windrbd-threads <backtrace-depth>
+# example: backtrace-windrbd-threads 4
 
 define backtrace-windrbd-threads
+  set $depth = $arg0 
   set $process = PsInitialSystemProcess
   set $entry = $process->ThreadListHead.Flink
   while $entry != &$process->ThreadListHead
@@ -140,7 +142,7 @@ define backtrace-windrbd-threads
         printf "%p %p %d %s\n", $thread, $thread->StartAddress, (enum _KTHREAD_STATE) $thread->Tcb->State, $w.comm
         save-context
         switch-context $thread
-        bt
+        bt $depth
         restore-context
     end
     set $entry = $entry->Flink
