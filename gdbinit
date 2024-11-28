@@ -51,6 +51,18 @@ define offsetof
   end
 end
 
+# usage: list-processes
+# lists all processes linked over the ActiveProcessLinks list
+# (which means there might be more).
+define list-processes
+  set $p = (struct _EPROCESS*)((char*)PsInitialSystemProcess->ActiveProcessLinks.Flink - (char*)&(((struct _EPROCESS*)0)->ActiveProcessLinks))
+  while $p != PsInitialSystemProcess
+     print $p
+     print $p->Pcb.Header.Type
+     set $p = (struct _EPROCESS*)((char*)$p->ActiveProcessLinks.Flink - (char*)&(((struct _EPROCESS*)0)->ActiveProcessLinks))
+  end
+end
+
 # usage: list-threads-of-process process
 # example: list-threads-of-process PsInitialSystemProcess
 
@@ -68,6 +80,18 @@ define list-threads-of-process
         print "not a WinDRBD thread"
     end
     set $entry = $entry->Flink
+  end
+end
+
+# usage: list-all-threads
+# lists all threads of all processes linked over the ActiveProcessLinks list
+# (which means there might be more).
+define list-all-threads
+  set $p = (struct _EPROCESS*)((char*)PsInitialSystemProcess->ActiveProcessLinks.Flink - (char*)&(((struct _EPROCESS*)0)->ActiveProcessLinks))
+  while $p != PsInitialSystemProcess
+     print $p
+     list-threads-of-process $p
+     set $p = (struct _EPROCESS*)((char*)$p->ActiveProcessLinks.Flink - (char*)&(((struct _EPROCESS*)0)->ActiveProcessLinks))
   end
 end
 
@@ -145,6 +169,29 @@ define backtrace-windrbd-threads
         bt $depth
         restore-context
     end
+    set $entry = $entry->Flink
+  end
+end
+
+# usage: backtrace-windrbd-threads <backtrace-depth>
+# example: backtrace-windrbd-threads 4
+
+define backtrace-all-threads
+  set $depth = $arg0 
+  set $process = PsInitialSystemProcess
+  set $entry = $process->ThreadListHead.Flink
+  while $entry != &$process->ThreadListHead
+    set $thread = (struct _ETHREAD *)(((char*)$entry) - (char*)(&((struct _ETHREAD *)0)->ThreadListEntry))
+    set $w = __find_thread($thread)
+    if $w != 0
+        printf "%p %p %d %s\n", $thread, $thread->StartAddress, (enum _KTHREAD_STATE) $thread->Tcb->State, $w.comm
+    else
+        printf "(not a WinDRBD thread)"
+    end
+    save-context
+    switch-context $thread
+    bt $depth
+    restore-context
     set $entry = $entry->Flink
   end
 end
