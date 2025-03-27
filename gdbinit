@@ -20,7 +20,8 @@ end
 
 define load-ntoskrnl-sep17
 #  add-symbol-file ntoskrnl.exe 0x80401000 -s .bss 0x8061c000 -s .data 0x805b8000 -s .edata 80645000
-  add-symbol-file ../../output-gdb/symbols/ntoskrnl.exe 0x80401000 -s .bss 0x8061c000 -s .data 0x805b8000 -s .edata 80645000
+add-symbol-file ../../output-gdb/symbols/ntoskrnl.exe 0x80401000 -s .bss 0x8061c000 -s .data 0x805b8000 -s .edata 80645000
+# add-symbol-file ../../output-gdb/symbols/ntoskrnl.exe 0x80402000 -s .bss 0x8061d000 -s .data 0x805b9000 -s .edata 80646000
 end
 
 # attach to target, load kernel symbols and break on BSOD
@@ -34,6 +35,12 @@ end
 
 define init-reactos-sep17
   target remote localhost:2002
+  load-ntoskrnl-sep17
+  break RtlpBreakWithStatusInstruction@0
+end
+
+define init-reactos-sep17-2
+  target remote localhost:2003
   load-ntoskrnl-sep17
   break RtlpBreakWithStatusInstruction@0
 end
